@@ -32,12 +32,14 @@ class MercadoPagoController(http.Controller):
         # el literal eval
         acquirer = request.env['payment.acquirer'].browse(safe_eval(post.get('acquirer_id'))).sudo()
         preference = safe_eval(post.get('mercadopago_preference'))
+        _logger.info('\n\n\npreference: %s' % pprint.pformat(preference))
 
         if not acquirer:
             return werkzeug.utils.redirect("/")
 
         MP = MercadoPagoAPI(acquirer)
         linkpay = MP.create_preference(preference)
+        _logger.info('\n\n\nlinkpay: %s' % pprint.pformat(preference))
         return werkzeug.utils.redirect(linkpay)
 
     @http.route([

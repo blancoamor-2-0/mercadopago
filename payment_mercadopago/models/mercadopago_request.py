@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import pprint
 
 from odoo import _
 from odoo.exceptions import UserError
@@ -88,10 +89,13 @@ class MercadoPagoAPI():
 
     # Preference
     def create_preference(self, preference):
+        _logger.info('\n\n\npreference: %s' % pprint.pformat(preference))
         resp = self.mp.preference().create(preference)
         if self.sandbox:
             _logger.info('Preference Result:\n%s' % resp)
+        _logger.info('\n\n\nresp: %s' % pprint.pformat(resp))
         resp = self.check_response(resp)
+        _logger.info('\n\n\ncheck_response: %s' % pprint.pformat(resp))
 
         if resp.get('err_code'):
             raise UserError(_("MercadoPago Error:\nCode: %s\nMessage: %s" % (resp.get('err_code'), resp.get('err_msg'))))
