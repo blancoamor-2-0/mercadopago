@@ -47,6 +47,7 @@ class PaymentAcquirerMercadoPago(models.Model):
         string='Capture method',
         default='deferred_capture'
     )
+    mercadopago_binary = fields.Boolean('Use binary mode', default=True)
 
     def _get_feature_support(self):
         """Get advanced feature support by provider.
@@ -296,7 +297,6 @@ class PaymentTransactionMercadoPago(models.Model):
 
         # TODO: revisar, si es validación el amount es 1.5 (viene de Odoo)
         res = MP.payment(self, round(self.amount, self.currency_id.decimal_places), capture, cvv_token)
-
         return self._mercadopago_s2s_validate_tree(res)
 
     def _mercadopago_s2s_validate_tree(self, tree):
@@ -310,7 +310,7 @@ class PaymentTransactionMercadoPago(models.Model):
         # hay casos la creacion del payer es mas lenta que la del pago y si lo pedimos nos dice que no existe
         # Pero hay casos donde payer o id no estan definidos en el result. para esos casos los busco en la funcion update
         customer_id = tree.get('payer', {}).get('id', False)
-        if status_code in ["approved", "authorized"]:
+        if status_code in ["approved"]:
             init_state = self.state
             self.write({
                 'acquirer_reference':  str(tree.get('id')),
@@ -322,10 +322,10 @@ class PaymentTransactionMercadoPago(models.Model):
             res = True
 
         # TODO: deberíamos separar este caso? sería cuando validamos tarjeta
-        # elif status_code == "authorized" and status_detail == "pending_capture":
-        #     self._set_transaction_authorized()
-        #     return True
-        elif status_code in ["in_process", "pending"]:
+        elif status_code == "authorized" and status_detail == "pending_capture":
+            self._set_transaction_done()
+            res = True
+        elif status_code in ["in_process", "pending", "authorized"]:
             self.write({'acquirer_reference': tree.get('id')})
             self._set_transaction_pending()
             res = True
